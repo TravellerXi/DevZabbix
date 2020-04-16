@@ -195,7 +195,6 @@ def Execute(XmlDir):
 
 if __name__ =="__main__":
     warnings.filterwarnings('ignore')
-    Dir = 'E:\A02-股票期权\computer_info' ### CSV放置根目录
     ZABBIX_SERVER = 'https://domain.com'
     zapi = ZabbixAPI(ZABBIX_SERVER)
     # Disable SSL certificate verification
