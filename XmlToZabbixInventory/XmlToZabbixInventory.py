@@ -9,6 +9,12 @@ import xml.dom.minidom
 from pyzabbix import ZabbixAPI, ZabbixAPIException
 import warnings
 
+def CheckIfhostExist(hostname):
+    if (zapi.host.get(output=['host'], filter={'host': hostname}))==[]:
+        return 0
+    else:
+        return 1
+
 
 def ReturnRawDataFromXml(FileDir):
     '''
@@ -90,9 +96,6 @@ def ReturnFormatedDataFromXml(FileDir):
                 else:
                     ZichanBianma.append(Result.childNodes[0].data)
 
-
-
-
     TotalData = []
     i = 0
     while i < len(ItBianma):
@@ -145,21 +148,21 @@ def WriteInventoryToZabbix(InventoryItem,host,hostname):
             else:
                 print(hostname + ' ' + Item + '已经有值，跳过写入...')
         if Item == 'date_hw_purchase':
-            inventoryvalue = '生产日期: ' + str(host['ShenchanRiqi'])
+            inventoryvalue = '生产日期:' + str(host['ShenchanRiqi'])
             if getInventorydata(hostname, Item) == '':
                 zapi.host.update(hostid=ReturnHostidFromHostname(hostname), inventory={Item: inventoryvalue})
                 print(hostname+' '+Item+'写入成功')
             else:
                 print(hostname + ' ' + Item + '已经有值，跳过写入...')
         if Item == 'asset_tag':
-            inventoryvalue = '资产编码: ' + str(host['ZichanBianma']) + ' ' + '设备SN: ' + str(host['DeviceSN'])
+            inventoryvalue = '资产编码:' + str(host['ZichanBianma'][0]) + ',' + '设备SN:' + str(host['DeviceSN'])
             if getInventorydata(hostname, Item) == '':
                 zapi.host.update(hostid=ReturnHostidFromHostname(hostname), inventory={Item: inventoryvalue})
                 print(hostname + ' ' + Item + '写入成功')
             else:
                 print(hostname + ' ' + Item + '已经有值，跳过写入...')
         if Item == 'site_rack':
-            inventoryvalue = '存放机柜:: ' + str(host['CunfangJigui'] )+ ' ' + '存放U位: ' + str(host['CunfangUwei'])
+            inventoryvalue = '存放机柜:' + str(host['CunfangJigui'] )+ ',' + '存放U位:' + str(host['CunfangUwei'])
             if getInventorydata(hostname, Item) == '':
                 zapi.host.update(hostid=ReturnHostidFromHostname(hostname), inventory={Item: inventoryvalue})
                 print(hostname + ' ' + Item + '写入成功')
@@ -175,39 +178,39 @@ def WriteInventoryToZabbix(InventoryItem,host,hostname):
     return 1
 
 def Execute(XmlDir):
+    '''
+    Read XML file, process data and update it to Zabbix Host Inventory if target is blank.
+    :param XmlDir: string type.
+    :return: 1
+    '''
     InventoryItem = ['tag', 'date_hw_purchase', 'asset_tag', 'site_rack', 'model']
     Hosts = ReturnFormatedDataFromXml(XmlDir)
     for host in Hosts:
-        if ReturnHostidFromHostname(host['IP1']) is not None:
-            hostname = host['IP1']
+        if CheckIfhostExist(str(host['IP1']))>0:
+            print('try ' + str(host['IP1']))
+            hostname = str(host['IP1'])
             WriteInventoryToZabbix(InventoryItem, host, hostname)
 
-        elif ReturnHostidFromHostname(host['IP2']) is not None:
-            hostname = host['IP2']
+        elif CheckIfhostExist(str(host['IP2']))>0:
+            print(' try '+str(host['IP2']))
+            hostname = str(host['IP2'])
             WriteInventoryToZabbix(InventoryItem, host, hostname)
-        elif ReturnHostidFromHostname(host['ComputerName']) is not None:
-            hostname = host['ComputerName']
+        elif CheckIfhostExist(str(host['ComputerName']))>0:
+            print( 'try ' + str(host['ComputerName']))
+            hostname = str(host['ComputerName'])
             WriteInventoryToZabbix(InventoryItem, host, hostname)
         else:
-            print(host)
-            print(' cannot found on Zabbix.')
+            print('cannot find any ip: '+str(host['IP1'])+'、 '+str(host['IP2'])+' or hostname '+str(host['ComputerName'])+' '+' on Zabbix.')
+    print('写入完毕')
     return 1
 
 if __name__ =="__main__":
     warnings.filterwarnings('ignore')
-    ZABBIX_SERVER = 'https://domain.com'
+    ZABBIX_SERVER = 'https://domain.com/'
     zapi = ZabbixAPI(ZABBIX_SERVER)
     # Disable SSL certificate verification
     zapi.session.verify = False
-    zapi.login("username", "password")
+    zapi.login("username", "passwd")
     XmlDir='C:\\Users\\Quantdo\\OneDrive\\工作\\配置基线-Zabbix开发\\updata-inventory\\test.xml'
     Execute(XmlDir)
-
-
-
-
-
-
-
-
 
