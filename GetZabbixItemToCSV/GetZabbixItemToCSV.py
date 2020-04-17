@@ -2,19 +2,44 @@
 # coding:utf-8
 
 """
-this script runs based on Windows zabbix agent.
-this script is about getting lastest value of zabbix item by it's 'item name' using api and write a to a csv file.
-Use for Dev env.
+this script is running based on Windows zabbix agent.
 
 """
 
 
-from pyzabbix import ZabbixAPI, ZabbixAPIException
-from datetime import datetime
-import time
+from pyzabbix import ZabbixAPI
 import warnings
 import csv
 import os
+
+def ReturnSingleFormedDataFromZabbixInventory(data):
+    '''
+    Return Formed data from zabbix inventory, specific host inventory content like: 资产编码:test,设备SN:06EPGCE
+    该函数专门处理Host inventory里存在多个数据的。
+    :param data: string type，zabbix api拿到的数据。
+    :return:形如: [{'存放机柜': 'A07'}, {'存放U位': '26'}]
+    '''
+    FormedData=[]
+    try:
+        for eachdata in data.split(','):
+            FormedData.append({eachdata.split(':')[0]: eachdata.split(':')[1]})
+        return FormedData
+    except:
+        return []
+
+
+def ReturnAllFormedDataForZabbixInventory(host):
+    '''
+    ReturnSingleFormedDataFromZabbixInventory的变体，可以返回下面定义InventoryItem里的所有值，并组合成一个
+    :param host: string type.
+    :return: 返回值形如:[{'IT编码': ' BA000465'}, {'生产日期': '2015/2/12'}, {'资产编码': 'test'}, {'设备SN': '06EPGCE'}, {'存放机柜': 'A07'}, {'存放U位': '26'}]
+    '''
+    AllRawData = []
+    InventoryItem = ['tag', 'date_hw_purchase', 'asset_tag', 'site_rack']
+    for Item in InventoryItem:
+        for EachItem in (ReturnSingleFormedDataFromZabbixInventory(getInventorydataFromHostName(host, Item))):
+            AllRawData.append(EachItem)
+    return(AllRawData)
 
 def CheckIfWindowsorLinux(host):
     '''
@@ -36,13 +61,13 @@ def ReturnCipanSize(host):
     disk = []
     for h in zapi.item.get(output=["itemid", "name", "hostid", "value_type", "lastvalue", 'key_'], host=host,
                            search={"name": '*' + 'Total disk space on' + '*'}, searchWildcardsEnabled='1'):
-        disk = disk + [{'CiPan': h['key_'][12:14], 'size': h['lastvalue']}]
+        disk = disk + [{'CiPan': h['key_'][12:13], 'size': h['lastvalue']}]
 
     cipan = []
     size = []
     for eachdisk in disk:
-        cipan.append(eachdisk['CiPan'])
-        size.append(eachdisk['size'])
+        cipan.append(eachdisk['CiPan']+'盘容量')
+        size.append(str(int(eachdisk['size'])/1024/1024/1024)+' G')
     return (cipan,size)
 
 def WriteinfoToCsv(filename,itemname,iteminfo,dir):
@@ -79,7 +104,18 @@ def getValueFromItem(host,item):
     '''
     data=[]
     for eachItem in item:
-        data.append(getValueFromHost(host,eachItem))
+        if eachItem=='Total memory':
+            if getValueFromHost(host, eachItem) is None:
+                data.append('')
+            else:
+                data.append(str(int(getValueFromHost(host, eachItem))/1024/1024/1024)+' G')
+        elif eachItem=='Diskdrive size':
+            if getValueFromHost(host, eachItem) is None:
+                data.append('')
+            else:
+                data.append(str(int(getValueFromHost(host, eachItem)) / 1024 / 1024 / 1024) + ' G')
+        else:
+            data.append(getValueFromHost(host,eachItem))
     return data
 
 def getInventorydataFromHostName(hostname,item):
@@ -100,7 +136,6 @@ def WriteServerAllInfotoCsv(host,Dir):
     :param Dir: where we put the file
     :return: 1
     '''
-
 
     HostDir=Dir+'\\'+host+'\\'
     try:
@@ -137,7 +172,7 @@ def WriteServerAllInfotoCsv(host,Dir):
     # here is 硬盘 list:
     Diskinfo=ReturnCipanSize(host)
     itemWithoutDisk = ['Diskdrive interface type', 'Diskdrive size', 'Diskdrive model']
-    itemChinese = ['驱动器类型', '容量', '型号']
+    itemChinese = ['驱动器类型', '总容量', '型号']
     for cipan in Diskinfo[0]:
         itemChinese.append(cipan)
     itemChinese.append('备注')
@@ -151,25 +186,25 @@ def WriteServerAllInfotoCsv(host,Dir):
             'OS OSType', 'OS SerialNumber', 'OS version', 'OS windows directory', 'Server host name',
             'Manufacturer', 'Product Name', 'Server serial number']
     itemChinese = ['系统名称', '系统字符集', 'Service Pack', '安装日期', '32位/64位',
-                   '系统语言版本', '系统类型', '系统产品序列号', '系统版本号',
-                   'Windows目录', '主机名', '服务器制造商', '服务器型号', '服务器序列号', '备注']
+                   '系统语言版本', '系统类型', '系统产品序列号', '补丁版本号',
+                   '系统目录', '主机名', '服务器制造商', '服务器型号', '服务器序列号', '说明']
     WriteinfoToCsv('操作系统.csv', itemChinese, getValueFromItem(host, item),HostDir)
 
     #### IP列表
-    item = ['Network adapter type', 'Network maxspeed', 'Network networkaddresses', 'Network product name',
-            'Network mac address']
-    itemChinese = ['网卡类型', '网卡最大速度', '网卡IP地址', '网卡产品名称', '网卡MAC地址', '备注']
+    item = ['Network adapter type', 'Network maxspeed', 'Network product name',
+            'Network mac address','Network networkaddresses']
+    itemChinese = ['网卡类型', '网卡最大速度',  '网卡产品名称', '网卡MAC地址','网卡IP地址','掩码','网关','说明']
     WriteinfoToCsv('ip列表.csv', itemChinese, getValueFromItem(host, item),HostDir)
 
     ### 计算机名称
     item = ['Server host name']
-    itemChinese = ['计算机名称', '备注']
+    itemChinese = ['计算机名称', '计算节点名称','虚拟机操作系统名称']
     WriteinfoToCsv('计算机名称.csv', itemChinese, getValueFromItem(host, item),HostDir)
 
     ### 基本信息
     itemChinese=['计算机类型','虚拟机类型','状态','应用名称','资产标签','SN序列号','OA流程编号','IT验收编码','资产编码']
-    itemValue=['','','','','',]
-    itemValue.append(getInventorydataFromHostName(host, 'serialno_a'))
+    itemValue=['','','','','',ReturnAllFormedDataForZabbixInventory(host)[3]['设备SN'],'',ReturnAllFormedDataForZabbixInventory(host)[0]['IT编码'],ReturnAllFormedDataForZabbixInventory(host)[2]['资产编码']]
+    #itemValue.append(getInventorydataFromHostName(host, 'serialno_a'))
     WriteinfoToCsv('基本信息.csv', itemChinese, itemValue,HostDir)
 
     #### 应用服务
@@ -180,23 +215,34 @@ def WriteServerAllInfotoCsv(host,Dir):
 
     ####  服务器型号
     item = ['Manufacturer', 'Product Name']
-    itemChinese = ['服务器品牌', '设备型号', '备注']
+    itemChinese = ['服务器品牌', '设备型号']
     WriteinfoToCsv('服务器型号.csv', itemChinese, getValueFromItem(host, item),HostDir)
 
     ###   物理位置
     itemChinese=['服务器物理位置','所属机柜','机柜位置']
-    with open(Dir + '\\' + host + '\\服务器'+'\\' + '物理位置.csv', 'w', newline='', encoding='utf-8-sig') as f:
-        writer = csv.writer(f)
-        writer.writerow(itemChinese)
+    LocationValue=[]
+    try:
+        LocationValue.append(str(getInventorydataFromHostName(host, 'location')))
+    except:
+        LocationValue.append('')
+    try:
+        LocationValue.append(ReturnAllFormedDataForZabbixInventory(host)[4]['存放机柜'])
+    except:
+        LocationValue.append('')
+    try:
+        LocationValue.append(ReturnAllFormedDataForZabbixInventory(host)[5]['存放U位'])
+    except:
+        LocationValue.append('')
+    WriteinfoToCsv('物理位置.csv', itemChinese, LocationValue, HostDir)
 
     #### 系统环境变量
-    item = ['OS environment']
+    #item = ['OS environment']
     itemChinese = ['系统环境', '备注']
-    WriteinfoToCsv('系统环境变量.csv', itemChinese, getValueFromItem(host, item),HostDir)
+    WriteinfoToCsv('系统环境变量.csv', itemChinese, '',HostDir)
 
     ####  安全配置
     item = ['Status of Windows Firewall', 'Symantec Endpoint Protection']
-    itemChinese = ['本机防火墙', '防病毒软件', '备注']
+    itemChinese = ['本机防火墙', '防病毒软件', '安全基线完成情况']
     WriteinfoToCsv('安全配置.csv', itemChinese, getValueFromItem(host, item),HostDir)
     return 1
 
@@ -215,12 +261,12 @@ def ReturnHostFromGroupName(groupname):
 if __name__ =="__main__":
     warnings.filterwarnings('ignore')
     Dir = 'E:\A02-股票期权\computer_info' ### CSV放置根目录
-    ZABBIX_SERVER = 'https://example.com/zabbix'
+    ZABBIX_SERVER = 'https://domain.com/'
     zapi = ZabbixAPI(ZABBIX_SERVER)
     # Disable SSL certificate verification
     zapi.session.verify = False
     zapi.login("username", "passwd")
-    for host in ReturnHostFromGroupName('股票期权交易系统'): ###哪些群组需要使用脚本
+    for host in ReturnHostFromGroupName('Zabbix servers'): ###哪些群组需要使用脚本
         if CheckIfWindowsorLinux(host)>0:
             print(host +' is the specific Windows, work on writting info to CSV file...')
             WriteServerAllInfotoCsv(host,Dir)
