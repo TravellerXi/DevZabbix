@@ -2,8 +2,9 @@
 
 # coding:utf-8
 '''
-RemoteUrl
-RemoteServer
+RemoteUrl：想要代理的网址，如https://zabbix.mytlu.cn
+RemoteServer 想要代理的主机名，如zabbix.mytlu.cn:80,带端口的
+插入的html code可以更改的，本例是以zabbix登陆页面为例，修改默认登陆页面，使其支持验证码。
 
 '''
 
@@ -17,10 +18,11 @@ requests.packages.urllib3.disable_warnings()
 
 app =Flask(__name__)
 app.config['JSON_AS_ASCII'] = False
-app.config['SECRET_KEY'] = 'cfomp@2020'
+app.config['SECRET_KEY'] = 'abcdefsadsadsa'#任意一个值
 RemoteUrl='https://zabbix.mytlu.cn'
 #RemoteServer=RemoteUrl[RemoteUrl.find('//')+2:]
 RemoteServer='zabbix.mytlu.cn'
+###head里host是带端口的
 
 TeZhenMa='''<div class="signin-container">'''
 
@@ -55,9 +57,7 @@ htmlcode='''
 </head>
 <body lang="en">
 <output class="msg-global-footer msg-warning" id="msg-global-footer"></output>
-<main><div class="signin-container"><div class="signin-logo"></div><form method="post" action="index.php" accept-charset="utf-8" aria-label="Sign in"><ul><li><label for="name">Username</label><input type="text" id="name" name="name" value="" maxlength="255" autofocus="autofocus"></li><li><label for="password">Password</label><input type="password" id="password" name="password" value="" maxlength="255"></li>
-<li><label for="captcha">验证码(不区分大小写)</label><input type="text" id="captcha" name="captcha" value="" maxlength="255"><br/><img src="/imgcode" id="captcha_img" onclick="this.src='/imgcode'" width="auto" height="auto">
-<a href="javascript:void(0)" onclick="document.getElementById('captcha_img').src='/imgcode?r='+Math.random()">换一个?</a><br/></li><li><input type="checkbox" id="autologin" name="autologin" value="1" class="checkbox-radio" checked="checked"><label for="autologin"><span></span>Remember me for 30 days</label></li><li><button type="submit" id="enter" name="enter" value="Sign in">Sign in</button></li></ul></form></div><div class="signin-links"><a target="_blank" class="grey link-alt" href="https://www.zabbix.com/documentation/4.0/">Help</a>&nbsp;&nbsp;•&nbsp;&nbsp;<a target="_blank" class="grey link-alt" href="https://www.zabbix.com/support">Support</a></div></main><footer role="contentinfo">&copy; 2001&ndash;2020, <a class="grey link-alt" target="_blank" href="https://www.zabbix.com/">Zabbix SIA</a></footer></body>
+<main><div class="signin-container"><div class="signin-logo"></div><form method="post" action="index.php" accept-charset="utf-8" aria-label="Sign in"><ul><li><label for="name">Username</label><input type="text" id="name" name="name" value="" maxlength="255" autofocus="autofocus"></li><li><label for="password">Password</label><input type="password" id="password" name="password" value="" maxlength="255"></li><li><label for="captcha">验证码(不区分大小写)</label><input type="text" id="captcha" name="captcha" value="" maxlength="255"><br/><img src="/imgcode" id="captcha_img" onclick="this.src='/imgcode'" width="auto" height="auto"><a href="javascript:void(0)" onclick="document.getElementById('captcha_img').src='/imgcode?r='+Math.random()">换一个?</a><br/></li><li><input type="checkbox" id="autologin" name="autologin" value="1" class="checkbox-radio" checked="checked"><label for="autologin"><span></span>Remember me for 30 days</label></li><li><button type="submit" id="enter" name="enter" value="Sign in">Sign in</button></li></ul></form></div><div class="signin-links"><a target="_blank" class="grey link-alt" href="https://www.zabbix.com/documentation/4.0/">Help</a>&nbsp;&nbsp;•&nbsp;&nbsp;<a target="_blank" class="grey link-alt" href="https://www.zabbix.com/support">Support</a></div></main><footer role="contentinfo">&copy; 2001&ndash;2020, <a class="grey link-alt" target="_blank" href="https://www.zabbix.com/">Zabbix SIA</a></footer></body>
 
 '''
 
@@ -69,7 +69,7 @@ def validate_picture():
     # 先生成一个新图片对象
     im = Image.new('RGB',(width, heighth), 'white')
     # 设置字体
-    font = ImageFont.truetype('times.ttf', 40)  # ###Windows 'times.ttf', Linux 'wqy-microhei.ttc'
+    font = ImageFont.truetype('times.ttf', 40)#windows times.ttf linux wqy-microhei.ttc
     # 创建draw对象
     draw = ImageDraw.Draw(im)
     str = ''
@@ -94,7 +94,7 @@ def validate_picture():
 
 @app.before_request
 def before_request():
-    if ((request.full_path.find('/?')>-1 or request.full_path=='/index.php' or request.full_path=='/index.php?' )) and request.cookies.get('zbx_sessionid') is None :
+    if ((request.full_path=='/?') or (request.full_path=='/') or (request.full_path=='/index.php') or (request.full_path=='/index.php?')) and request.cookies.get('zbx_sessionid') is None :
         if  request.method=='GET':
             return htmlcode
         elif request.method=='POST':
@@ -110,15 +110,12 @@ def before_request():
                     for name, value in request.headers:
                         if name == 'Host':
                             headers[name] = RemoteServer
-                            continue
                         if name == 'Referer':
                             headers[name] = RemoteUrl
-                            continue
                         if not value or name == 'Cache-Control':
                             continue
-                        headers[name] = value
-                        
-
+                        else:
+                            headers[name] = value
                     headers['Host'] = RemoteServer
                     with closing(
                             requests.request(method, url, headers=headers, data=data, stream=True, cookies=mycookies,verify=False)
@@ -129,12 +126,10 @@ def before_request():
                                                 'content-encoding'):
                                 continue
                             resp_headers.append((name, value))
-                        print(len(r.text))
                         if str(r.text).find(TeZhenMa)>-1:
                             return ('用户名或者密码错误，请重新登陆<br>'+htmlcode)
                         else:
-                            print(Response(r.content, status=r.status_code, headers=resp_headers))
-                            return Response(r, status=r.status_code, headers=resp_headers,mimetype='text/html')
+                            return Response(r.content, status=r.status_code, headers=resp_headers)
             else:
                 return ('验证码错误，请重新输入（不区分大小写）<br>'+htmlcode)
         else:
@@ -154,9 +149,9 @@ def before_request():
 
     elif request.full_path == '/index.php?reconnect=1':
         response = redirect('/index.php')
-        response.delete_cookie('zbx_sessionid')
-        response.delete_cookie('session')
-        response.delete_cookie('PHPSESSID')
+        cookies=request.cookies
+        for eachCookie in cookies:
+            response.delete_cookie(eachCookie)
         return response
     else:
         mycookies = request.cookies
@@ -165,17 +160,12 @@ def before_request():
         data = request.data or request.form or None
         headers = dict()
         for name, value in request.headers:
-            if name == 'Host':
-                headers[name] = RemoteServer
-                continue
-            if name == 'Referer':
-                headers[name] = RemoteUrl
-                continue
             if not value or name == 'Cache-Control':
                 continue
-
-            headers[name] = value
+            else:
+                headers[name] = value
         headers['Host'] = RemoteServer
+        headers['Referer'] = RemoteUrl
         with closing(
                 requests.request(method, url, headers=headers, data=data, stream=True, cookies=mycookies,verify=False)
         ) as r:
@@ -185,7 +175,11 @@ def before_request():
                                     'content-encoding'):
                     continue
                 resp_headers.append((name, value))
-            return Response(r, status=r.status_code, headers=resp_headers)
+            if str(r.text).find(TeZhenMa) > -1:
+                print(url)
+                return ('用户名或者密码错误,请重新登陆<br>'+htmlcode)
+            else:
+                return Response(r.content, status=r.status_code, headers=resp_headers)
 
 if __name__ == '__main__':
-    app.run(host='127.0.0.1', port=8080, debug=True,threaded=True)
+    app.run(host='0.0.0.0', port=80, debug=True,threaded=True)
