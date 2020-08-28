@@ -2,8 +2,8 @@
 
 # coding:utf-8
 '''
-RemoteUrl：想要代理的网址，如https://zabbix.mytlu.cn
-RemoteServer 想要代理的主机名，如zabbix.mytlu.cn:80,带端口的
+RemoteUrl：想要代理的网址，如https://zabbix.domain.com
+RemoteServer 想要代理的主机名，如zabbix.domain.com:80,带端口的
 插入的html code可以更改的，本例是以zabbix登陆页面为例，修改默认登陆页面，使其支持验证码。
 
 '''
