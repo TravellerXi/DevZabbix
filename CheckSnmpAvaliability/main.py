@@ -11,10 +11,11 @@ if __name__ == '__main__':
     # Disable SSL certificate verification
     zapi.session.verify = False
     zapi.login("username", "password")
-    SnmpUnreachable=zapi.host.get(snmp_available=2)
-    hostnames=[]
+    SnmpUnreachable=zapi.host.get()
+    hostnames = []
     for host in SnmpUnreachable:
-        hostnames.append(host['host'])
+        if host['snmp_available']=='2':
+            hostnames.append(host['host'])
     with open ('Snmp不可达主机列表.txt','w') as f:
         for hostname in hostnames:
             f.write(hostname+'\n')
