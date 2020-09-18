@@ -1,8 +1,8 @@
 # 打通Zabbix告警与企业微信
 
->Env :Python2 + Python3
->Python2 : pip install -r requirement2.txt 
->Python3: pip3 install -r requirement3.txt
+>Env :Python2 + Python3<br>
+>Python2 : pip install -r requirement2.txt <br>
+>Python3: pip3 install -r requirement3.txt<br>
 
 ## 支持：
 >1. zabbix消息推送企业微信
