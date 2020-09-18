@@ -8,3 +8,5 @@
 >1. zabbix消息推送企业微信
 >2. 企业微信上ack或者close zabbix问题
 >3. 更多功能开发中
+
+### 系统所有配置信息在 python2/CorpInfo.py
