@@ -1,11 +1,11 @@
-# 打通Zabbix告警与企业微信
+# 打通Zabbix告警与企业微信(微信适用)
 
 >Env :Python2 + Python3(需要使用企业微信的API，为Python2，所以Python2和Python3的环境都需要安装)<br>
 >Python2 : pip install -r requirement2.txt <br>
 >Python3: pip3 install -r requirement3.txt<br>
 
 ## 支持：
->1. zabbix消息推送企业微信
+>1. zabbix消息推送企业微信和微信
 >2. 企业微信上ack或者close zabbix问题
 >3. 更多功能开发中
 
