@@ -1,6 +1,6 @@
 #企业微信相关信息，需要在企业微信里开通一个应用
 sToken = ''
-sEncodingAESKey = 'W'
+sEncodingAESKey = ''
 sCorpID =''
 CorpID=sCorpID
 CorpSecret=''
