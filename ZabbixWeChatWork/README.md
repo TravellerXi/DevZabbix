@@ -3,7 +3,7 @@
 >Env :Python2 + Python3
 python2文件夹下为企业微信的官方API，使用的是python2，尝试改为python3，涉及加密信息，没有修改成功，因此需要python2的环境。
 主程序以Python3编写，使用Flask框架。
-<br>安装依赖
+<br>安装依赖<br>
 >Python2 : pip install -r requirement2.txt <br>
 >Python3: pip3 install -r requirement3.txt<br>
 
