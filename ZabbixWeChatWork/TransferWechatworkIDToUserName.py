@@ -3,7 +3,6 @@
 import requests
 from python2.CorpInfo import *
 
-
 def TransferIDToName(Userid):
     GetResponse = requests.request("get",
                                    "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid="+CorpID+"&corpsecret="+CorpSecret).json()

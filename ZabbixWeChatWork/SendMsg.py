@@ -5,45 +5,13 @@ import json
 from python2.CorpInfo import *
 
 
-def SendMessageByApplication(UserList,Content):
-
-    GetResponse = requests.request("get",
-                                   "https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid="+CorpID+"&corpsecret="+CorpSecret).json()
-    if not (GetResponse['errcode'] == 0):
-        print('接收微信access_token失败')
-        return 0
-    access_token = (GetResponse['access_token'])
-    touser = ''
-    for i in UserList:
-        touser = touser + i
-    rawdata = {
-        'touser': touser,
-        'msgtype': "text",
-        'agentid': AgentID,
-        'text': {
-            'content': Content
-        },
-        'safe': 0,
-        'enable_id_trans': 0,
-        'enable_duplicate_check': 0
-    }
-
-    post_url = 'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=' + access_token
-    try:
-        PostContent = requests.post(post_url, json.dumps(rawdata))
-        PostContent_ErrorCode = PostContent.json()['errcode']
-        if not (PostContent_ErrorCode == 0):
-            print('微信系统返回错误')
-            return 0
-        else:
-            return 1
-    except:
-        print('post发送失败')
-        return 0
 
 
 def SendCardMessageByTaskCardToApp(UserId,Subject,Message,task_id):
-
+    '''
+    发送任务卡片，UserId,Subject,Message,task_id均为string。
+    task_id由zabbix的problem ID + @ + 时间戳制成。详见WeChatMessage.py
+    '''
     GetResponse = requests.get("https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid="+CorpID+"&corpsecret="+CorpSecret,proxies=proxy).json()
     if not (GetResponse['errcode'] == 0):
         print('接收微信access_token失败')
@@ -61,7 +29,6 @@ def SendCardMessageByTaskCardToApp(UserId,Subject,Message,task_id):
     Content = ''
     for data in FormedArray:
         Content = Content + data
-    print(Content)
     rawdata = {
    "touser" : UserId,
    "msgtype" : "taskcard",
@@ -90,7 +57,6 @@ def SendCardMessageByTaskCardToApp(UserId,Subject,Message,task_id):
    "duplicate_check_interval": 1800
 }
 
-
     post_url = 'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=' + access_token
     PostContent = requests.post(post_url, json.dumps(rawdata),proxies=proxy)
     print(PostContent.json())
@@ -99,7 +65,9 @@ def SendCardMessageByTaskCardToApp(UserId,Subject,Message,task_id):
 
 
 def UpdateTaskCardToApp(UserId,TaskID,clicked_key):
-
+    '''
+    更新任务卡片，当用户点击确认处理时，调用处理程序后，会再调用此函数。
+    '''
     GetResponse = requests.get("https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid="+CorpID+"&corpsecret="+CorpSecret,proxies=proxy).json()
     if not (GetResponse['errcode'] == 0):
         print('接收微信access_token失败')
@@ -119,7 +87,11 @@ def UpdateTaskCardToApp(UserId,TaskID,clicked_key):
     return 1
 
 def SendTextToApp(UserId,Content):
-
+    '''
+        发送纯文本信息
+        UserId：String
+        Content:String
+        '''
     GetResponse = requests.get("https://qyapi.weixin.qq.com/cgi-bin/gettoken?corpid="+CorpID+"&corpsecret="+CorpSecret,proxies=proxy).json()
     if not (GetResponse['errcode'] == 0):
         print('接收微信access_token失败')
@@ -137,8 +109,7 @@ def SendTextToApp(UserId,Content):
    "enable_duplicate_check": 0,
    "duplicate_check_interval": 1800
 }
-
-    post_url = 'https://qyapi.weixin.qq.com/cgi-bin/message/update_taskcard?access_token=' + access_token
+    post_url = 'https://qyapi.weixin.qq.com/cgi-bin/message/send?access_token=' + access_token
     PostContent = requests.post(post_url, json.dumps(rawdata),proxies=proxy)
     print(PostContent.json())
     print(rawdata)

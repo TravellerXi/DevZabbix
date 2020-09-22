@@ -10,17 +10,17 @@ def HandleZabbixEventUpdateRequest(EventID:str,Operations:str,Username:str):
     :param Username: Zabbix Username
     :return:
     '''
-    url = ""  # 这里填写url
+    url = URL  # 这里填写url
     zapi = ZabbixAPI(server=url)
     warnings.filterwarnings('ignore')
-    zapi.login(user=username, password=password)
+    zapi.login(user=UserName, password=PassWord)
     if Operations=='ack':
-        AckMessage='用户'+Username+'通过企业微信确认问题'+str(EventID)
+        AckMessage='用户'+Username+'通过企业微信确认问题ID'+str(EventID)
         zapi.event.acknowledge(eventids=str(EventID),action='6',message=AckMessage)
         return ('1')
     if Operations=='close':
         try:
-            CloseMessage = '用户' + Username + '通过企业微信关闭问题' + str(EventID)
+            CloseMessage = '用户' + Username + '通过企业微信关闭问题ID' + str(EventID)
             zapi.event.acknowledge(eventids=str(EventID), action='1', message=CloseMessage)
             return ('1')
         except Exception as e:
