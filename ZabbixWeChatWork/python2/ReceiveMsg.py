@@ -59,8 +59,14 @@ if __name__ == "__main__":
       print(Content.text + ',' + FromUserName.text + ',' + MsgType + ',' + ToUserName.text)
    elif MsgType=='event':
       EventKey = xml_tree.find('EventKey')
-      TaskId = xml_tree.find('TaskId')
-      FromUserName = xml_tree.find('FromUserName')
-      MsgId = '0'
-      ToUserName = xml_tree.find('ToUserName')
-      print(EventKey.text + ',' + FromUserName.text + ',' + MsgType+ ',' +TaskId.text)
+      try:
+         TaskId = xml_tree.find('TaskId')
+         FromUserName = xml_tree.find('FromUserName')
+         MsgId = '0'
+         ToUserName = xml_tree.find('ToUserName')
+         print(EventKey.text + ',' + FromUserName.text + ',' + MsgType + ',' + TaskId.text)
+      except:
+         FromUserName = xml_tree.find('FromUserName')
+         MsgId = '0'
+         ToUserName = xml_tree.find('ToUserName')
+         print(EventKey.text + ',' + FromUserName.text + ',' + MsgType + ',' + 'myproblem')

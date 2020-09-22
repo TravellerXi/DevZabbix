@@ -1,12 +1,17 @@
-#企业微信相关信息，需要在企业微信里开通一个应用
+#!/usr/bin/env python3
+# coding:utf-8
+###整个系统所有配置信息都在此文件里
+
+#企业微信相关信息
 sToken = ''
 sEncodingAESKey = ''
 sCorpID =''
 CorpID=sCorpID
 CorpSecret=''
-AgentID=1
-#部署环境有代理，请填写代理信息
-proxy = {'http': 'http://127.0.0.1:1080', 'https': 'http://127.0.0.1:1080'}
-#以下是zabbix用户信息
-username=''
-password=''
+AgentID=1000002
+#部署环境网络代理信息
+proxy = {'http': 'http://localhost:1080', 'https': 'http://localhost:1080'}
+#zabbix信息
+UserName='Admin'
+PassWord='password'
+URL="http://zabbix/"
